@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cloudflare Worker / CDN Domain Bypasser & Upload Speed Limit Fixer</title>
-<meta name="description" content="Convert your VLESS and Trojan configurations into custom Xray JSON with TLS Fragment — resilient against Cloudflare Worker/CDN domain blocks with no upload speed limits.">
+<title>Config Converter for Bypassing Cloudflare Worker Domain Filtering / CDN & Upload Speed Limits</title>
+<meta name="description" content="Convert your vless and trojan configs into a custom fragmented-TLS Xray format — resistant to worker-domain filtering, with no upload speed limit.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0a0f14;
@@ -26,7 +26,7 @@
     --danger:#ff6b6b;
     --radius:12px;
     --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
-    --sans:'Inter',system-ui,sans-serif;
+    --sans:'Vazirmatn',system-ui,sans-serif;
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
@@ -75,7 +75,7 @@
     padding:16px 0 8px;
     display:flex;
     align-items:center;
-    justify-content:space-between;
+    justify-space-between;
     gap:12px;
     flex-wrap:wrap;
   }
@@ -223,6 +223,24 @@
   }
   .opt .opt-title{font-weight:600; font-size:13px; margin-bottom:1px;}
   .opt .opt-desc{font-size:11.5px; color:var(--text-faint);}
+  .opt.is-disabled{opacity:.5;}
+  .opt.is-disabled:hover{border-color:var(--border);}
+  .opt-input{
+    margin-top:7px;
+    width:100%;
+    max-width:220px;
+    background:#0a1119;
+    border:1px solid var(--border);
+    border-radius:6px;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:12px;
+    padding:6px 9px;
+    direction:ltr;
+    text-align:left;
+  }
+  .opt-input:disabled{opacity:.5; cursor:not-allowed;}
+  .section-gap{margin-top:10px;}
 
   .cta-row{display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap;}
   #status{font-size:12.5px; color:var(--text-muted); font-family:var(--mono);}
@@ -289,33 +307,33 @@
   </header>
 
   <div class="hero">
-    <h1>Config Converter for Bypassing <em>Cloudflare Worker</em> / CDN Blocks<br>and Upload Speed Throttling</h1>
+    <h1>Config Converter for Bypassing <em>Cloudflare Worker</em> Domain Filtering / CDN<br>and Upload Speed Limits</h1>
     <p class="lede">
-      Paste your <code>vless</code> and <code>trojan</code> links here to get a custom Xray config with TLS fragment settings. Designed to bypass worker domain restrictions and fix upload speed limits — everything runs locally in your browser.
+      Drop your <code>vless</code> and <code>trojan</code> links in here; you'll get back a custom Xray config with TLS fragmentation that's more resistant to worker/CDN domain filtering and also bypasses upload speed limits — everything runs right here, in your own browser.
     </p>
     <div class="devnote">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <span>Prerequisites:<br>Latest Xray-core version<br>Xray-core >= 26.6.27<br>(v2rayNG >= 2.2.6)</span>
+      <span>Requirements:<br>Latest version of the Xray core<br>Xray-core >= 26.6.27<br>(v2rayNG >= 2.2.6)</span>
     </div>
     <div class="devnote">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <span>For more details on how this format operates, check out the developer's Telegram channel:<a href="https://t.me/patt_channel_x/91?single" target="_blank" rel="noopener">t.me/patt_channel_x/91</a></span>
+      <span>For a more detailed explanation of how this format works, check out the developer's Telegram channel: <a href="https://t.me/patt_channel_x/91?single" target="_blank" rel="noopener">t.me/patt_channel_x/91</a></span>
     </div>
   </div>
 
   <!-- Step 1: input -->
   <div class="card">
-    <h2><span class="step-num">1</span> Config Inputs</h2>
-    <p class="hint">Enter each <code>vless://</code> or <code>trojan://</code> link on a new line, or use one of the options below.</p>
+    <h2><span class="step-num">1</span> Enter your configs</h2>
+    <p class="hint">Put each <code>vless://</code> or <code>trojan://</code> link on its own line, or use one of the methods below.</p>
     <textarea id="configInput" placeholder="vless://uuid@server:443?...&#10;trojan://password@server:443?..."></textarea>
 
-    <div class="divider-or">OR</div>
+    <div class="divider-or">or</div>
 
     <div class="row">
-      <input type="url" id="subUrl" placeholder="Subscription URL …" dir="ltr">
-      <button id="fetchSubBtn" class="ghost">Fetch from Sub Link</button>
+      <input type="url" id="subUrl" placeholder="Subscription link (Sub Link) …" dir="ltr">
+      <button id="fetchSubBtn" class="ghost">Fetch from sub link</button>
       <button id="uploadBtn" class="ghost file-btn">
-        Upload .txt File
+        Upload .txt file
         <input type="file" id="fileInput" accept=".txt,text/plain">
       </button>
     </div>
@@ -323,21 +341,50 @@
 
   <!-- Step 2: options -->
   <div class="card">
-    <h2><span class="step-num">2</span> Output Routing Settings</h2>
-    <p class="hint">These options are enabled by default. Unchecking either option will remove its rule from the generated routing configuration.</p>
+    <h2><span class="step-num">2</span> Output routing settings</h2>
+    <p class="hint">Default (Custom Rules off): the output is just your <code>vless/trojan</code> links with TLS fragmentation added. Turn on "Custom Rules" to get a full Xray config with routing rules instead.</p>
     <div class="opts">
       <label class="opt">
-        <input type="checkbox" id="optAds" checked>
+        <input type="checkbox" id="optCustomRules">
         <span>
-          <div class="opt-title">Ad Blocking</div>
-          <div class="opt-desc">Block advertising domains and trackers (geosite:category-ads-all/ir)</div>
+          <div class="opt-title">Custom Rules</div>
+          <div class="opt-desc">Build a full Xray config output with routing rules (ad blocking / Iran bypass)</div>
+        </span>
+      </label>
+    </div>
+
+    <div class="opts section-gap">
+      <label class="opt is-disabled" id="optAdsWrap">
+        <input type="checkbox" id="optAds" checked disabled>
+        <span>
+          <div class="opt-title">Ad blocking</div>
+          <div class="opt-desc">Block ad and tracker domains (geosite:category-ads-all/ir)</div>
+        </span>
+      </label>
+      <label class="opt is-disabled" id="optIranWrap">
+        <input type="checkbox" id="optIran" checked disabled>
+        <span>
+          <div class="opt-title">Bypass Iranian sites</div>
+          <div class="opt-desc">Connect directly to .ir domains and Iranian IPs, without going through the proxy</div>
+        </span>
+      </label>
+    </div>
+
+    <div class="opts section-gap">
+      <label class="opt">
+        <input type="checkbox" id="optCleanIp">
+        <span>
+          <div class="opt-title">Clean IP</div>
+          <div class="opt-desc">Replace the address of all output configs with this IP</div>
+          <input type="text" id="cleanIpValue" class="opt-input" value="188.114.97.6" disabled dir="ltr" inputmode="decimal">
         </span>
       </label>
       <label class="opt">
-        <input type="checkbox" id="optIran" checked>
+        <input type="checkbox" id="optCleanPort">
         <span>
-          <div class="opt-title">Bypass Iranian Sites</div>
-          <div class="opt-desc">Directly route .ir domains and Iranian IPs without proxying</div>
+          <div class="opt-title">Port</div>
+          <div class="opt-desc">Replace the port of all output configs with this value</div>
+          <input type="text" id="cleanPortValue" class="opt-input" value="443" disabled dir="ltr" inputmode="numeric">
         </span>
       </label>
     </div>
@@ -347,7 +394,7 @@
   <div class="card">
     <h2><span class="step-num">3</span> Convert</h2>
     <div class="cta-row">
-      <button id="convertBtn" class="primary">Convert Configs</button>
+      <button id="convertBtn" class="primary">Convert configs</button>
       <span id="status"></span>
     </div>
   </div>
@@ -355,10 +402,10 @@
   <!-- Step 4: output -->
   <div class="card" id="outputCard" style="display:none;">
     <h2><span class="step-num">4</span> Output</h2>
-    <p class="hint">Ready to copy or download — import this directly into your Xray / v2rayNG client.</p>
+    <p class="hint">Ready to copy or download — import this output directly into the Xray/v2rayNG app.</p>
     <div class="out-actions">
-      <button id="copyBtn">Copy Output</button>
-      <button id="downloadBtn">Download Output (ff.txt)</button>
+      <button id="copyBtn">Copy output</button>
+      <button id="downloadBtn">Download output (ff.txt)</button>
     </div>
     <textarea id="output" readonly></textarea>
   </div>
@@ -375,7 +422,7 @@
         SeyedNG@
       </a>
     </div>
-    <p class="foot-note">All processing is done locally within your browser; no configuration data is sent to external servers (except direct fetches for subscription links).</p>
+    <p class="foot-note">All processing happens locally, right in your browser; no config is ever sent to any server (except the direct request to the subscription link itself).</p>
   </footer>
 
 </div>
@@ -550,6 +597,85 @@
     };
   }
 
+  // ---------- Simple link mode (custom rules OFF) ----------
+  // Fixed value of the fm parameter, matching the default fragment exactly
+  const VPNF_FM_RAW = '{"tcp": [{"type": "fragment", "settings": {"packets": "tlshello", "lengths": ["5", "94", "1"], "delays": ["0"], "maxSplit": "0"}},{"type": "fragment", "settings": {"packets": "1-1", "lengths": ["109", "1"], "delays": ["1"], "maxSplit": "355"}}]}';
+
+  function splitLink(raw) {
+    const hashIdx = raw.indexOf('#');
+    const hash = hashIdx !== -1 ? raw.slice(hashIdx) : '';
+    const withoutHash = hashIdx !== -1 ? raw.slice(0, hashIdx) : raw;
+    const qIdx = withoutHash.indexOf('?');
+    const query = qIdx !== -1 ? withoutHash.slice(qIdx + 1) : '';
+    const base = qIdx !== -1 ? withoutHash.slice(0, qIdx) : withoutHash;
+    return { base, query, hash };
+  }
+
+  function parseQueryPairs(query) {
+    if (!query) return [];
+    return query.split('&').filter(Boolean).map(pair => {
+      const eq = pair.indexOf('=');
+      if (eq === -1) return [pair, ''];
+      return [pair.slice(0, eq), pair.slice(eq + 1)];
+    });
+  }
+
+  function stringifyQueryPairs(pairs) {
+    return pairs.map(([k, v]) => k + '=' + v).join('&');
+  }
+
+  function buildSimpleLinkQuery(query) {
+    const pairs = parseQueryPairs(query);
+    const fmValue = encodeURIComponent(VPNF_FM_RAW);
+    let insertedFm = false;
+    let sawFp = false;
+    const result = [];
+    for (const [k, v] of pairs) {
+      if (k === 'fp') {
+        result.push([k, 'unsafe']);
+        sawFp = true;
+        continue;
+      }
+      result.push([k, v]);
+      if (k === 'encryption' && !insertedFm) {
+        result.push(['fm', fmValue]);
+        insertedFm = true;
+      }
+    }
+    if (!insertedFm) {
+      const idx = result.findIndex(([k]) => k === 'insecure');
+      if (idx !== -1) result.splice(idx, 0, ['fm', fmValue]);
+      else result.push(['fm', fmValue]);
+    }
+    if (!sawFp) {
+      const idx = result.findIndex(([k]) => k === 'type');
+      if (idx !== -1) result.splice(idx, 0, ['fp', 'unsafe']);
+      else result.push(['fp', 'unsafe']);
+    }
+    return stringifyQueryPairs(result);
+  }
+
+  function applyAddressOverride(base, ipOverride, portOverride) {
+    const m = base.match(/^([a-z]+):\/\/([^@]+)@(.+)$/i);
+    if (!m) return base;
+    const [, scheme, userinfo, hostport] = m;
+    let host = hostport, port = '';
+    const hp = hostport.match(/^(.*):(\d+)$/);
+    if (hp) { host = hp[1]; port = hp[2]; }
+    if (ipOverride) host = ipOverride;
+    if (portOverride) port = portOverride;
+    return scheme + '://' + userinfo + '@' + host + (port ? ':' + port : '');
+  }
+
+  function transformSimpleLink(raw, ipOverride, portOverride) {
+    try {
+      const { base, query, hash } = splitLink(raw.trim());
+      const newBase = applyAddressOverride(base, ipOverride, portOverride);
+      const newQuery = buildSimpleLinkQuery(query);
+      return newBase + (newQuery ? '?' + newQuery : '') + hash;
+    } catch (e) { return null; }
+  }
+
   const $ = (id) => document.getElementById(id);
   const configInput = $('configInput');
   const subUrl = $('subUrl');
@@ -561,6 +687,41 @@
   const output = $('output');
   const copyBtn = $('copyBtn');
   const downloadBtn = $('downloadBtn');
+
+  const optCustomRules = $('optCustomRules');
+  const optAds = $('optAds');
+  const optIran = $('optIran');
+  const optAdsWrap = $('optAdsWrap');
+  const optIranWrap = $('optIranWrap');
+  const optCleanIp = $('optCleanIp');
+  const cleanIpValue = $('cleanIpValue');
+  const optCleanPort = $('optCleanPort');
+  const cleanPortValue = $('cleanPortValue');
+
+  function syncCustomRulesUI() {
+    const on = optCustomRules.checked;
+    optAds.disabled = !on;
+    optIran.disabled = !on;
+    optAdsWrap.classList.toggle('is-disabled', !on);
+    optIranWrap.classList.toggle('is-disabled', !on);
+    if (on) {
+      optAds.checked = true;
+      optIran.checked = true;
+    } else {
+      optAds.checked = false;
+      optIran.checked = false;
+    }
+  }
+  optCustomRules.addEventListener('change', syncCustomRulesUI);
+  syncCustomRulesUI();
+
+  function wireInlineToggle(checkbox, field) {
+    checkbox.addEventListener('change', () => { field.disabled = !checkbox.checked; });
+    field.addEventListener('click', (e) => e.stopPropagation());
+    field.addEventListener('mousedown', (e) => e.stopPropagation());
+  }
+  wireInlineToggle(optCleanIp, cleanIpValue);
+  wireInlineToggle(optCleanPort, cleanPortValue);
 
   function setStatus(msg, kind) {
     statusEl.textContent = msg;
@@ -599,14 +760,14 @@
     const reader = new FileReader();
     reader.onload = () => {
       appendLinksToInput(String(reader.result));
-      setStatus('File content added to config list.', 'ok');
+      setStatus('File content added to the config list.', 'ok');
     };
-    reader.onerror = () => setStatus('Error reading file.', 'err');
+    reader.onerror = () => setStatus('Error reading the file.', 'err');
     reader.readAsText(f);
     fileInput.value = '';
   });
 
-  // Strip URI fragments and spaces
+  // Fully sanitize the URL: strip hash, spaces, and extra whitespace
   function sanitizeSubUrl(rawUrl) {
     let clean = rawUrl.trim();
     const hashIdx = clean.indexOf('#');
@@ -616,14 +777,14 @@
     return clean;
   }
 
-  // Multi-fallback fetch logic with Custom User-Agent and CORS Proxies
+  // Try to fetch the sub link using a custom header and fallback proxies
   async function fetchViaProxy(rawUrl) {
     const cleanUrl = sanitizeSubUrl(rawUrl);
     const headers = {
       'User-Agent': 'v2rayNG/1.8.12 (Android)'
     };
 
-    // Attempt 1: Direct fetch
+    // Method 1: direct fetch
     try {
       const r = await fetch(cleanUrl, { cache: 'no-store', headers });
       if (r.ok) {
@@ -632,7 +793,7 @@
       }
     } catch (e) { }
 
-    // Attempt 2: CorsProxy.io
+    // Method 2: use CorsProxy.io
     try {
       const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(cleanUrl);
       const r = await fetch(proxyUrl, { cache: 'no-store' });
@@ -642,7 +803,7 @@
       }
     } catch (e) { }
 
-    // Attempt 3: AllOrigins
+    // Method 3: use AllOrigins
     try {
       const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(cleanUrl);
       const r = await fetch(proxyUrl, { cache: 'no-store' });
@@ -652,7 +813,7 @@
       }
     } catch (e) { }
 
-    // Attempt 4: CodeTabs CORS Proxy
+    // Method 4: use CodeTabs CORS Proxy
     try {
       const proxyUrl = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(cleanUrl);
       const r = await fetch(proxyUrl, { cache: 'no-store' });
@@ -662,20 +823,20 @@
       }
     } catch (e) { }
 
-    throw new Error('Failed to fetch subscription content');
+    throw new Error('Failed to get a successful response from the sub link');
   }
 
   fetchSubBtn.addEventListener('click', async () => {
     const url = subUrl.value.trim();
-    if (!url) { setStatus('Please enter a subscription link first.', 'err'); return; }
+    if (!url) { setStatus('Enter a subscription link first.', 'err'); return; }
     fetchSubBtn.disabled = true;
-    setStatus('Fetching subscription link…');
+    setStatus('Fetching from sub link…');
     try {
       const text = await fetchViaProxy(url);
       appendLinksToInput(text);
-      setStatus('Subscription configs successfully added.', 'ok');
+      setStatus('Sub link configs added successfully.', 'ok');
     } catch (e) {
-      setStatus('Failed to fetch subscription. Please paste content manually.', 'err');
+      setStatus('Failed to fetch the sub link. Please paste the sub content manually.', 'err');
     } finally {
       fetchSubBtn.disabled = false;
     }
@@ -683,34 +844,57 @@
 
   convertBtn.addEventListener('click', () => {
     const raw = configInput.value.trim();
-    if (!raw) { setStatus('Please enter at least one config first.', 'err'); return; }
+    if (!raw) { setStatus('Enter a config first.', 'err'); return; }
 
     const lines = decodeSubText(raw).split('\n').map(l => l.trim()).filter(Boolean);
-    const opts = { ads: $('optAds').checked, iran: $('optIran').checked };
+    const customRules = optCustomRules.checked;
+    const opts = { ads: optAds.checked, iran: optIran.checked };
+    const ipOverride = optCleanIp.checked ? cleanIpValue.value.trim() : '';
+    const portOverride = optCleanPort.checked ? cleanPortValue.value.trim() : '';
 
-    const entries = [];
-    let unsupported = 0, failed = 0;
+    let unsupported = 0, failed = 0, count = 0;
 
-    lines.forEach((line, i) => {
-      const parsed = parseLink(line, i);
-      if (!parsed) { failed++; return; }
-      if (parsed.unsupported) { unsupported++; return; }
-      const entry = buildVpnfEntry(parsed, opts);
-      if (entry) entries.push(entry); else unsupported++;
-    });
+    if (customRules) {
+      const entries = [];
+      lines.forEach((line, i) => {
+        const parsed = parseLink(line, i);
+        if (!parsed) { failed++; return; }
+        if (parsed.unsupported) { unsupported++; return; }
+        if (ipOverride) parsed.server = ipOverride;
+        if (portOverride) parsed.port = parseInt(portOverride, 10) || parsed.port;
+        const entry = buildVpnfEntry(parsed, opts);
+        if (entry) entries.push(entry); else unsupported++;
+      });
 
-    if (entries.length === 0) {
-      setStatus('No valid VLESS or Trojan configs found.', 'err');
-      outputCard.style.display = 'none';
-      return;
+      if (entries.length === 0) {
+        setStatus('No valid vless/trojan config was found.', 'err');
+        outputCard.style.display = 'none';
+        return;
+      }
+      output.value = JSON.stringify(entries, null, 2);
+      count = entries.length;
+    } else {
+      const linksOut = [];
+      lines.forEach((line) => {
+        if (!(line.startsWith('vless://') || line.startsWith('trojan://'))) { unsupported++; return; }
+        const transformed = transformSimpleLink(line, ipOverride, portOverride);
+        if (transformed) linksOut.push(transformed); else failed++;
+      });
+
+      if (linksOut.length === 0) {
+        setStatus('No valid vless/trojan config was found.', 'err');
+        outputCard.style.display = 'none';
+        return;
+      }
+      output.value = linksOut.join('\n');
+      count = linksOut.length;
     }
 
-    output.value = JSON.stringify(entries, null, 2);
     outputCard.style.display = '';
 
-    let msg = entries.length + ' config(s) successfully converted.';
-    if (unsupported) msg += ' (' + unsupported + ' unsupported protocol items removed)';
-    if (failed) msg += ' (' + failed + ' unparseable items skipped)';
+    let msg = count + ' config(s) converted successfully.';
+    if (unsupported) msg += ' (' + unsupported + ' unsupported-protocol item(s) removed)';
+    if (failed) msg += ' (' + failed + ' link(s) could not be parsed)';
     setStatus(msg, 'ok');
     outputCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });

@@ -223,6 +223,24 @@
   }
   .opt .opt-title{font-weight:600; font-size:13px; margin-bottom:1px;}
   .opt .opt-desc{font-size:11.5px; color:var(--text-faint);}
+  .opt.is-disabled{opacity:.5;}
+  .opt.is-disabled:hover{border-color:var(--border);}
+  .opt-input{
+    margin-top:7px;
+    width:100%;
+    max-width:220px;
+    background:#0a1119;
+    border:1px solid var(--border);
+    border-radius:6px;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:12px;
+    padding:6px 9px;
+    direction:ltr;
+    text-align:left;
+  }
+  .opt-input:disabled{opacity:.5; cursor:not-allowed;}
+  .section-gap{margin-top:10px;}
 
   .cta-row{display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap;}
   #status{font-size:12.5px; color:var(--text-muted); font-family:var(--mono);}
@@ -324,20 +342,49 @@
   <!-- Step 2: options -->
   <div class="card">
     <h2><span class="step-num">2</span> تنظیمات روتینگ خروجی</h2>
-    <p class="hint">این دو گزینه به‌صورت پیش‌فرض فعالن؛ هرکدوم رو غیرفعال کنی، rule مربوطه از routing خروجی حذف می‌شه.</p>
+    <p class="hint">پیش‌فرض (قوانین سفارشی خاموش): خروجی همون لینک‌های <code>vless/trojan</code> با فرگمنت TLS اضافه‌شده‌ست. با روشن کردن «قوانین سفارشی»، خروجی به کانفیگ کامل Xray با قوانین روتینگ تبدیل می‌شه.</p>
     <div class="opts">
       <label class="opt">
-        <input type="checkbox" id="optAds" checked>
+        <input type="checkbox" id="optCustomRules">
+        <span>
+          <div class="opt-title">قوانین سفارشی</div>
+          <div class="opt-desc">ساخت خروجی کانفیگ کامل Xray به‌همراه قوانین روتینگ (تبلیغات / بایپس ایران)</div>
+        </span>
+      </label>
+    </div>
+
+    <div class="opts section-gap">
+      <label class="opt is-disabled" id="optAdsWrap">
+        <input type="checkbox" id="optAds" checked disabled>
         <span>
           <div class="opt-title">مقابله با تبلیغات</div>
           <div class="opt-desc">بلاک کردن دامنه‌های تبلیغاتی و ردیاب (geosite:category-ads-all/ir)</div>
         </span>
       </label>
-      <label class="opt">
-        <input type="checkbox" id="optIran" checked>
+      <label class="opt is-disabled" id="optIranWrap">
+        <input type="checkbox" id="optIran" checked disabled>
         <span>
           <div class="opt-title">بایپس سایت‌های ایرانی</div>
           <div class="opt-desc">اتصال مستقیم دامنه‌های .ir و آی‌پی‌های ایران، بدون عبور از پراکسی</div>
+        </span>
+      </label>
+    </div>
+
+    <div class="opts section-gap">
+      <label class="opt">
+        <input type="checkbox" id="optCleanIp">
+        <span>
+          <div class="opt-title">آی‌پی تمیز</div>
+          <div class="opt-desc">جایگزینی آدرس همه‌ی کانفیگ‌های خروجی با این آی‌پی</div>
+          <input type="text" id="cleanIpValue" class="opt-input" value="188.114.97.6" disabled dir="ltr" inputmode="decimal">
+        </span>
+      </label>
+      <label class="opt">
+        <input type="checkbox" id="optCleanPort">
+        <span>
+          <div class="opt-title">پورت</div>
+          <div class="opt-desc">جایگزینی پورت همه‌ی کانفیگ‌های خروجی با این مقدار</div>
+          <input type="text" id="cleanPortValue" class="opt-input" value="443" disabled dir="ltr" inputmode="numeric">
         </span>
       </label>
     </div>
@@ -550,6 +597,85 @@
     };
   }
 
+  // ---------- Simple link mode (custom rules OFF) ----------
+  // مقدار ثابت پارامتر fm، دقیقا مطابق فرگمنت پیش‌فرض
+  const VPNF_FM_RAW = '{"tcp": [{"type": "fragment", "settings": {"packets": "tlshello", "lengths": ["5", "94", "1"], "delays": ["0"], "maxSplit": "0"}},{"type": "fragment", "settings": {"packets": "1-1", "lengths": ["109", "1"], "delays": ["1"], "maxSplit": "355"}}]}';
+
+  function splitLink(raw) {
+    const hashIdx = raw.indexOf('#');
+    const hash = hashIdx !== -1 ? raw.slice(hashIdx) : '';
+    const withoutHash = hashIdx !== -1 ? raw.slice(0, hashIdx) : raw;
+    const qIdx = withoutHash.indexOf('?');
+    const query = qIdx !== -1 ? withoutHash.slice(qIdx + 1) : '';
+    const base = qIdx !== -1 ? withoutHash.slice(0, qIdx) : withoutHash;
+    return { base, query, hash };
+  }
+
+  function parseQueryPairs(query) {
+    if (!query) return [];
+    return query.split('&').filter(Boolean).map(pair => {
+      const eq = pair.indexOf('=');
+      if (eq === -1) return [pair, ''];
+      return [pair.slice(0, eq), pair.slice(eq + 1)];
+    });
+  }
+
+  function stringifyQueryPairs(pairs) {
+    return pairs.map(([k, v]) => k + '=' + v).join('&');
+  }
+
+  function buildSimpleLinkQuery(query) {
+    const pairs = parseQueryPairs(query);
+    const fmValue = encodeURIComponent(VPNF_FM_RAW);
+    let insertedFm = false;
+    let sawFp = false;
+    const result = [];
+    for (const [k, v] of pairs) {
+      if (k === 'fp') {
+        result.push([k, 'unsafe']);
+        sawFp = true;
+        continue;
+      }
+      result.push([k, v]);
+      if (k === 'encryption' && !insertedFm) {
+        result.push(['fm', fmValue]);
+        insertedFm = true;
+      }
+    }
+    if (!insertedFm) {
+      const idx = result.findIndex(([k]) => k === 'insecure');
+      if (idx !== -1) result.splice(idx, 0, ['fm', fmValue]);
+      else result.push(['fm', fmValue]);
+    }
+    if (!sawFp) {
+      const idx = result.findIndex(([k]) => k === 'type');
+      if (idx !== -1) result.splice(idx, 0, ['fp', 'unsafe']);
+      else result.push(['fp', 'unsafe']);
+    }
+    return stringifyQueryPairs(result);
+  }
+
+  function applyAddressOverride(base, ipOverride, portOverride) {
+    const m = base.match(/^([a-z]+):\/\/([^@]+)@(.+)$/i);
+    if (!m) return base;
+    const [, scheme, userinfo, hostport] = m;
+    let host = hostport, port = '';
+    const hp = hostport.match(/^(.*):(\d+)$/);
+    if (hp) { host = hp[1]; port = hp[2]; }
+    if (ipOverride) host = ipOverride;
+    if (portOverride) port = portOverride;
+    return scheme + '://' + userinfo + '@' + host + (port ? ':' + port : '');
+  }
+
+  function transformSimpleLink(raw, ipOverride, portOverride) {
+    try {
+      const { base, query, hash } = splitLink(raw.trim());
+      const newBase = applyAddressOverride(base, ipOverride, portOverride);
+      const newQuery = buildSimpleLinkQuery(query);
+      return newBase + (newQuery ? '?' + newQuery : '') + hash;
+    } catch (e) { return null; }
+  }
+
   const $ = (id) => document.getElementById(id);
   const configInput = $('configInput');
   const subUrl = $('subUrl');
@@ -561,6 +687,41 @@
   const output = $('output');
   const copyBtn = $('copyBtn');
   const downloadBtn = $('downloadBtn');
+
+  const optCustomRules = $('optCustomRules');
+  const optAds = $('optAds');
+  const optIran = $('optIran');
+  const optAdsWrap = $('optAdsWrap');
+  const optIranWrap = $('optIranWrap');
+  const optCleanIp = $('optCleanIp');
+  const cleanIpValue = $('cleanIpValue');
+  const optCleanPort = $('optCleanPort');
+  const cleanPortValue = $('cleanPortValue');
+
+  function syncCustomRulesUI() {
+    const on = optCustomRules.checked;
+    optAds.disabled = !on;
+    optIran.disabled = !on;
+    optAdsWrap.classList.toggle('is-disabled', !on);
+    optIranWrap.classList.toggle('is-disabled', !on);
+    if (on) {
+      optAds.checked = true;
+      optIran.checked = true;
+    } else {
+      optAds.checked = false;
+      optIran.checked = false;
+    }
+  }
+  optCustomRules.addEventListener('change', syncCustomRulesUI);
+  syncCustomRulesUI();
+
+  function wireInlineToggle(checkbox, field) {
+    checkbox.addEventListener('change', () => { field.disabled = !checkbox.checked; });
+    field.addEventListener('click', (e) => e.stopPropagation());
+    field.addEventListener('mousedown', (e) => e.stopPropagation());
+  }
+  wireInlineToggle(optCleanIp, cleanIpValue);
+  wireInlineToggle(optCleanPort, cleanPortValue);
 
   function setStatus(msg, kind) {
     statusEl.textContent = msg;
@@ -686,29 +847,52 @@
     if (!raw) { setStatus('اول یه کانفیگ وارد کن.', 'err'); return; }
 
     const lines = decodeSubText(raw).split('\n').map(l => l.trim()).filter(Boolean);
-    const opts = { ads: $('optAds').checked, iran: $('optIran').checked };
+    const customRules = optCustomRules.checked;
+    const opts = { ads: optAds.checked, iran: optIran.checked };
+    const ipOverride = optCleanIp.checked ? cleanIpValue.value.trim() : '';
+    const portOverride = optCleanPort.checked ? cleanPortValue.value.trim() : '';
 
-    const entries = [];
-    let unsupported = 0, failed = 0;
+    let unsupported = 0, failed = 0, count = 0;
 
-    lines.forEach((line, i) => {
-      const parsed = parseLink(line, i);
-      if (!parsed) { failed++; return; }
-      if (parsed.unsupported) { unsupported++; return; }
-      const entry = buildVpnfEntry(parsed, opts);
-      if (entry) entries.push(entry); else unsupported++;
-    });
+    if (customRules) {
+      const entries = [];
+      lines.forEach((line, i) => {
+        const parsed = parseLink(line, i);
+        if (!parsed) { failed++; return; }
+        if (parsed.unsupported) { unsupported++; return; }
+        if (ipOverride) parsed.server = ipOverride;
+        if (portOverride) parsed.port = parseInt(portOverride, 10) || parsed.port;
+        const entry = buildVpnfEntry(parsed, opts);
+        if (entry) entries.push(entry); else unsupported++;
+      });
 
-    if (entries.length === 0) {
-      setStatus('هیچ کانفیگ vless/trojan معتبری پیدا نشد.', 'err');
-      outputCard.style.display = 'none';
-      return;
+      if (entries.length === 0) {
+        setStatus('هیچ کانفیگ vless/trojan معتبری پیدا نشد.', 'err');
+        outputCard.style.display = 'none';
+        return;
+      }
+      output.value = JSON.stringify(entries, null, 2);
+      count = entries.length;
+    } else {
+      const linksOut = [];
+      lines.forEach((line) => {
+        if (!(line.startsWith('vless://') || line.startsWith('trojan://'))) { unsupported++; return; }
+        const transformed = transformSimpleLink(line, ipOverride, portOverride);
+        if (transformed) linksOut.push(transformed); else failed++;
+      });
+
+      if (linksOut.length === 0) {
+        setStatus('هیچ کانفیگ vless/trojan معتبری پیدا نشد.', 'err');
+        outputCard.style.display = 'none';
+        return;
+      }
+      output.value = linksOut.join('\n');
+      count = linksOut.length;
     }
 
-    output.value = JSON.stringify(entries, null, 2);
     outputCard.style.display = '';
 
-    let msg = entries.length + ' کانفیگ با موفقیت تبدیل شد.';
+    let msg = count + ' کانفیگ با موفقیت تبدیل شد.';
     if (unsupported) msg += ' (' + unsupported + ' مورد پروتکل پشتیبانی‌نشده حذف شد)';
     if (failed) msg += ' (' + failed + ' لینک قابل پارس نبود)';
     setStatus(msg, 'ok');
