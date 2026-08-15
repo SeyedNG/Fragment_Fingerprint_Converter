@@ -218,7 +218,7 @@
     background:rgba(255,255,255,.01);
   }
   .opt:hover{border-color:var(--accent-dim);}
-  .opt input{
+  .opt input[type=checkbox]{
     margin-top:3px; width:15px; height:15px; accent-color:var(--accent); flex:0 0 auto;
   }
   .opt .opt-title{font-weight:600; font-size:13px; margin-bottom:1px;}
@@ -232,14 +232,31 @@
     background:#0a1119;
     border:1px solid var(--border);
     border-radius:6px;
-    color:var(--text);
+    color:var(--text) !important;
+    -webkit-text-fill-color:var(--text);
+    caret-color:var(--accent);
     font-family:var(--mono);
-    font-size:12px;
-    padding:6px 9px;
+    font-size:13px;
+    padding:7px 10px;
     direction:ltr;
     text-align:left;
   }
   .opt-input:disabled{opacity:.5; cursor:not-allowed;}
+  .opt-input:focus{
+    outline:none;
+    border-color:var(--accent-dim);
+    box-shadow:0 0 0 2px var(--accent-soft);
+  }
+  .opt-input:-webkit-autofill,
+  .opt-input:-webkit-autofill:hover,
+  .opt-input:-webkit-autofill:focus,
+  .opt-input:-webkit-autofill:active{
+    -webkit-text-fill-color:var(--text) !important;
+    -webkit-box-shadow:0 0 0 1000px #0a1119 inset !important;
+    box-shadow:0 0 0 1000px #0a1119 inset !important;
+    caret-color:var(--accent);
+    transition:background-color 9999s ease-in-out 0s;
+  }
   .section-gap{margin-top:10px;}
 
   .cta-row{display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap;}
@@ -376,7 +393,7 @@
         <span>
           <div class="opt-title">Clean IP</div>
           <div class="opt-desc">Replace the address of all output configs with this IP</div>
-          <input type="text" id="cleanIpValue" class="opt-input" value="188.114.97.6" disabled dir="ltr" inputmode="decimal">
+          <input type="text" id="cleanIpValue" class="opt-input" value="188.114.97.6" disabled dir="ltr" inputmode="decimal" autocomplete="off" autocapitalize="off" spellcheck="false">
         </span>
       </label>
       <label class="opt">
@@ -384,7 +401,7 @@
         <span>
           <div class="opt-title">Port</div>
           <div class="opt-desc">Replace the port of all output configs with this value</div>
-          <input type="text" id="cleanPortValue" class="opt-input" value="443" disabled dir="ltr" inputmode="numeric">
+          <input type="text" id="cleanPortValue" class="opt-input" value="443" disabled dir="ltr" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false">
         </span>
       </label>
     </div>
