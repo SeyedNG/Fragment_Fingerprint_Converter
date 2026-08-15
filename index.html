@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مبدل کانفیگ جهت عبور از فیلترینگ دامنه‌ی ورکر کلودفلر / CDN و دور زدن محدودیت سرعت آپلود</title>
+<meta name="description" content="کانفیگ‌های vless و trojan خودتون رو به فرمت سفارشی Xray با فرگمنت TLS تبدیل کنید — مقاوم در برابر فیلترینگ دامنه ورکر و بدون محدودیت سرعت آپلود.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f14;
+    --bg-2:#0d141b;
+    --surface:#121a23;
+    --surface-2:#17212c;
+    --border:#223040;
+    --border-soft:#1a2530;
+    --text:#e7edf3;
+    --text-muted:#8fa1b3;
+    --text-faint:#5c7086;
+    --accent:#49d6a8;
+    --accent-dim:#2c8567;
+    --accent-soft:rgba(73,214,168,.12);
+    --warn:#ffb454;
+    --danger:#ff6b6b;
+    --radius:12px;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+    --sans:'Vazirmatn',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 500px at 15% -10%, rgba(73,214,168,.10), transparent 60%),
+      radial-gradient(900px 480px at 100% 0%, rgba(73,214,168,.06), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  ::selection{background:var(--accent);color:#062018;}
+
+  /* ---------- Fragment signature strip ---------- */
+  .frag-strip{
+    display:flex;
+    gap:4px;
+    align-items:flex-end;
+    height:22px;
+    overflow:hidden;
+  }
+  .frag-strip span{
+    display:block;
+    width:4px;
+    border-radius:2px;
+    background:var(--accent);
+    opacity:.25;
+    animation:frag-pulse 2.6s ease-in-out infinite;
+  }
+  @keyframes frag-pulse{
+    0%,100%{opacity:.18; transform:scaleY(.35);}
+    50%{opacity:.9; transform:scaleY(1);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .frag-strip span{animation:none; opacity:.6; transform:scaleY(.7);}
+  }
+
+  /* ---------- Layout shell ---------- */
+  .wrap{max-width:880px; margin:0 auto; padding:0 16px;}
+
+  header.top{
+    padding:16px 0 8px;
+    display:flex;
+    align-items:center;
+    justify-space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:13px; color:var(--text-muted); letter-spacing:.02em;}
+  .brand b{color:var(--accent); font-weight:600;}
+
+  .hero{padding:16px 0 4px;}
+  h1{
+    font-size:clamp(24px, 3.8vw, 34px);
+    line-height:1.3;
+    font-weight:800;
+    margin:0 0 12px;
+    letter-spacing:-.01em;
+  }
+  h1 em{color:var(--accent); font-style:normal;}
+  .lede{color:var(--text-muted); font-size:15px; max-width:62ch; margin:0 0 14px;}
+
+  .devnote{
+    margin:10px 0;
+    padding:10px 14px;
+    border:1px solid var(--border-soft);
+    border-radius:8px;
+    background:var(--surface);
+    font-size:13.5px;
+    color:var(--text-muted);
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+  }
+  .devnote svg{flex:0 0 auto; margin-top:3px; color:var(--accent);}
+  .devnote a{color:var(--accent); text-decoration:none; border-bottom:1px dashed var(--accent-dim);}
+  .devnote a:hover{border-bottom-style:solid;}
+
+  /* ---------- Card / form ---------- */
+  .card{
+    background:linear-gradient(180deg, var(--surface), var(--surface-2));
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+    margin:14px 0;
+  }
+  .card h2{
+    font-size:14.5px; margin:0 0 4px; font-weight:700;
+    display:flex; align-items:center; gap:8px;
+  }
+  .step-num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:20px; height:20px; border-radius:6px;
+    background:var(--accent-soft); color:var(--accent);
+    font-family:var(--mono); font-size:11.5px; font-weight:600;
+  }
+  .card p.hint{color:var(--text-faint); font-size:12.5px; margin:0 0 10px;}
+
+  textarea{
+    width:100%;
+    min-height:120px;
+    resize:vertical;
+    background:#0a1119;
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:12px;
+    line-height:1.6;
+    padding:10px 12px;
+    direction:ltr;
+    text-align:left;
+  }
+  textarea:focus, input:focus{
+    outline:none;
+    border-color:var(--accent-dim);
+    box-shadow:0 0 0 2px var(--accent-soft);
+  }
+  textarea::placeholder{color:var(--text-faint);}
+
+  .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .row > *{flex:1 1 200px;}
+
+  input[type=url], input[type=text]{
+    width:100%;
+    background:#0a1119;
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:12.5px;
+    padding:9px 12px;
+    direction:ltr;
+    text-align:left;
+  }
+
+  button{
+    font-family:var(--sans);
+    cursor:pointer;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text);
+    font-size:13px;
+    font-weight:600;
+    padding:9px 15px;
+    transition:.15s transform, .15s border-color, .15s background;
+    white-space:nowrap;
+  }
+  button:hover{border-color:var(--accent-dim);}
+  button:active{transform:translateY(1px);}
+  button.ghost{background:transparent;}
+  button.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#062018;
+    font-weight:700;
+  }
+  button.primary:hover{background:#5ee0b7;}
+  button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+  .file-btn{position:relative; overflow:hidden;}
+  .file-btn input[type=file]{
+    position:absolute; inset:0; opacity:0; cursor:pointer;
+  }
+
+  .divider-or{
+    display:flex; align-items:center; gap:8px;
+    color:var(--text-faint); font-size:11.5px; margin:10px 0;
+  }
+  .divider-or::before, .divider-or::after{
+    content:''; flex:1; height:1px; background:var(--border-soft);
+  }
+
+  .opts{
+    display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;
+  }
+  .opt{
+    display:flex; align-items:flex-start; gap:8px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:10px 12px;
+    flex:1 1 220px;
+    cursor:pointer;
+    transition:.15s border-color, .15s background;
+    background:rgba(255,255,255,.01);
+  }
+  .opt:hover{border-color:var(--accent-dim);}
+  .opt input{
+    margin-top:3px; width:15px; height:15px; accent-color:var(--accent); flex:0 0 auto;
+  }
+  .opt .opt-title{font-weight:600; font-size:13px; margin-bottom:1px;}
+  .opt .opt-desc{font-size:11.5px; color:var(--text-faint);}
+
+  .cta-row{display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap;}
+  #status{font-size:12.5px; color:var(--text-muted); font-family:var(--mono);}
+  #status.err{color:var(--danger);}
+  #status.ok{color:var(--accent);}
+
+  .out-actions{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  #output{min-height:180px;}
+
+  footer{
+    margin:30px 0 20px;
+    padding-top:20px;
+    border-top:1px solid var(--border-soft);
+    text-align:center;
+  }
+  .slogan{
+    font-size:clamp(18px,2.5vw,22px);
+    font-weight:800;
+    letter-spacing:.02em;
+    background:linear-gradient(90deg,#e7edf3,var(--accent) 50%,#e7edf3);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    margin:0 0 14px;
+  }
+  .foot-links{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:12px;}
+  .foot-note{font-size:11.5px; color:var(--text-faint);}
+
+  .pill-link{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; color:var(--text-muted);
+    border:1px solid var(--border); border-radius:999px;
+    padding:5px 12px; text-decoration:none;
+    transition:.15s border-color, .15s color;
+  }
+  .pill-link:hover{border-color:var(--accent-dim); color:var(--text);}
+
+  @media (max-width:560px){
+    .card{padding:14px;}
+    header.top{padding-top:12px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="frag-strip" aria-hidden="true">
+        <span style="animation-delay:.0s;height:8px"></span>
+        <span style="animation-delay:.15s;height:16px"></span>
+        <span style="animation-delay:.3s;height:11px"></span>
+        <span style="animation-delay:.45s;height:20px"></span>
+        <span style="animation-delay:.6s;height:9px"></span>
+        <span style="animation-delay:.75s;height:15px"></span>
+      </div>
+      <span>Fragment+Fingerprint converter</span>
+    </div>
+    <a class="pill-link" href="index_en.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/></svg>
+      English
+    </a>
+  </header>
+
+  <div class="hero">
+    <h1>مبدل کانفیگ جهت عبور از فیلترینگ دامنه‌ی <em>ورکر کلودفلر</em> / CDN<br>و دور زدن محدودیت سرعت آپلود</h1>
+    <p class="lede">
+      لینک‌های <code>vless</code> و <code>trojan</code> رو بریز اینجا؛ خروجی یه کانفیگ Xray سفارشی با فرگمنتِ TLS می‌گیری که در برابر فیلترینگِ دامنه‌ی ورکر/CDN مقاوم‌تره و محدودیت سرعت آپلود رو هم دور می‌زنه — همه‌چیز توی همین صفحه و توی مرورگر خودت انجام می‌شه.
+    </p>
+    <div class="devnote">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>پیش‌نیاز:<br>جدیدترین نسخه از هسته ایکس ری<br>Xray-core >= 26.6.27<br>(v2rayNG >= 2.2.6)</span>
+    </div>
+    <div class="devnote">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>جهت توضیحات دقیق‌تر و آشنایی بیشتر با نحوه‌ی کار این فرمت، به کانال تلگرام توسعه دهنده ، پترنیهای عزیز مراجعه فرمائید<a href="https://t.me/patt_channel_x/91?single" target="_blank" rel="noopener">t.me/patt_channel_x/91</a></span>
+    </div>
+  </div>
+
+  <!-- Step 1: input -->
+  <div class="card">
+    <h2><span class="step-num">1</span> ورودی کانفیگ‌ها</h2>
+    <p class="hint">هر لینک <code>vless://</code> یا <code>trojan://</code> رو در یک خط جدا وارد کن، یا از یکی از روش‌های زیر استفاده کن.</p>
+    <textarea id="configInput" placeholder="vless://uuid@server:443?...&#10;trojan://password@server:443?..."></textarea>
+
+    <div class="divider-or">یا</div>
+
+    <div class="row">
+      <input type="url" id="subUrl" placeholder="لینک ساب‌اسکریپشن (Sub Link) …" dir="ltr">
+      <button id="fetchSubBtn" class="ghost">دریافت از ساب لینک</button>
+      <button id="uploadBtn" class="ghost file-btn">
+        آپلود فایل txt
+        <input type="file" id="fileInput" accept=".txt,text/plain">
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 2: options -->
+  <div class="card">
+    <h2><span class="step-num">2</span> تنظیمات روتینگ خروجی</h2>
+    <p class="hint">این دو گزینه به‌صورت پیش‌فرض فعالن؛ هرکدوم رو غیرفعال کنی، rule مربوطه از routing خروجی حذف می‌شه.</p>
+    <div class="opts">
+      <label class="opt">
+        <input type="checkbox" id="optAds" checked>
+        <span>
+          <div class="opt-title">مقابله با تبلیغات</div>
+          <div class="opt-desc">بلاک کردن دامنه‌های تبلیغاتی و ردیاب (geosite:category-ads-all/ir)</div>
+        </span>
+      </label>
+      <label class="opt">
+        <input type="checkbox" id="optIran" checked>
+        <span>
+          <div class="opt-title">بایپس سایت‌های ایرانی</div>
+          <div class="opt-desc">اتصال مستقیم دامنه‌های .ir و آی‌پی‌های ایران، بدون عبور از پراکسی</div>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Step 3: convert -->
+  <div class="card">
+    <h2><span class="step-num">3</span> تبدیل</h2>
+    <div class="cta-row">
+      <button id="convertBtn" class="primary">تبدیل کانفیگ‌ها</button>
+      <span id="status"></span>
+    </div>
+  </div>
+
+  <!-- Step 4: output -->
+  <div class="card" id="outputCard" style="display:none;">
+    <h2><span class="step-num">4</span> خروجی</h2>
+    <p class="hint">آماده‌ی کپی یا دانلود — این خروجی رو مستقیم توی اپ Xray/v2rayNG وارد کن.</p>
+    <div class="out-actions">
+      <button id="copyBtn">کپی خروجی</button>
+      <button id="downloadBtn">دانلود خروجی (ff.txt)</button>
+    </div>
+    <textarea id="output" readonly></textarea>
+  </div>
+
+  <footer>
+    <p class="slogan">زن، زندگی، آزادی</p>
+    <div class="foot-links">
+      <a class="pill-link" href="https://github.com/SeyedNG" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        SeyedNG
+      </a>
+      <a class="pill-link" href="https://t.me/SeyedNG" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 240 240" fill="currentColor"><path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0Zm56.1 79.9-19.1 90.1c-1.4 6.4-5.2 8-10.6 5l-29.3-21.6-14.1 13.6c-1.6 1.6-2.9 2.9-5.9 2.9l2.1-30 54.6-49.3c2.4-2.1-.5-3.3-3.6-1.2L91 130.5l-29-9.1c-6.3-2-6.4-6.3 1.3-9.3l113.4-43.7c5.2-1.9 9.8 1.3 8.1 9.5Z"/></svg>
+        SeyedNG@
+      </a>
+    </div>
+    <p class="foot-note">تمام پردازش‌ها لوکال و داخل مرورگر خودت انجام می‌شه؛ هیچ کانفیگی به هیچ سروری ارسال نمی‌شه (به‌جز درخواست مستقیم به خودِ لینک ساب‌اسکریپشن).</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const randomizeCase = (str) => str.split('').map(c => Math.random() > 0.5 ? c.toUpperCase() : c.toLowerCase()).join('');
+
+  function parseVless(link, index) {
+    try {
+      const u = new URL(link);
+      const address = u.hostname.replace(/\[|\]/g, '');
+      const port = parseInt(u.port) || 443;
+      const uuid = u.username || u.pathname.replace(/^\/\/?/, '');
+      const params = u.searchParams;
+
+      let path = params.get('path') || '/';
+      path = path.split('?')[0];
+      if (!path.startsWith('/')) path = '/' + path;
+
+      let workerDomain = (params.get('host') || params.get('sni') || address).trim();
+      const sni = randomizeCase(workerDomain);
+      const host = workerDomain;
+
+      let tag = u.hash ? decodeURIComponent(u.hash.slice(1).trim()) : '';
+      if (!tag) tag = params.get('remark') || ('vpn-' + (index + 1));
+
+      return {
+        protocol: 'vless', tag, server: address, port, uuid, path, host, sni,
+        raw: link,
+        encryption: params.get('encryption') || 'none',
+        flow: params.get('flow') || ''
+      };
+    } catch (e) { return null; }
+  }
+
+  function parseTrojan(link, index) {
+    try {
+      const u = new URL(link);
+      const address = u.hostname.replace(/\[|\]/g, '');
+      const port = parseInt(u.port) || 443;
+      const password = u.username || '';
+      const params = u.searchParams;
+
+      let workerDomain = (params.get('sni') || params.get('host') || address).trim();
+      const sni = randomizeCase(workerDomain);
+      const host = workerDomain;
+      const path = params.get('path') || '/';
+
+      let tag = u.hash ? decodeURIComponent(u.hash.slice(1).trim()) : '';
+      if (!tag) tag = params.get('remark') || ('trojan-' + (index + 1));
+
+      return { protocol: 'trojan', tag, server: address, port, password, sni, host, path, raw: link };
+    } catch (e) { return null; }
+  }
+
+  function parseLink(link, index) {
+    if (link.startsWith('vless://')) return parseVless(link, index);
+    if (link.startsWith('trojan://')) return parseTrojan(link, index);
+    return { unsupported: true, raw: link };
+  }
+
+  function buildVpnfDns() {
+    return {
+      hosts: {
+        "domain:googleapis.cn": "googleapis.com",
+        "dns.alidns.com": ["223.5.5.5", "223.6.6.6", "2400:3200::1", "2400:3200:baba::1"],
+        "dns.sse.cisco.com": ["208.67.220.220", "208.67.222.222", "2620:119:35::35", "2620:119:53::53"],
+        "dns.umbrella.com": ["208.67.220.220", "208.67.222.222", "2620:119:35::35", "2620:119:53::53"],
+        "one.one.one.one": ["1.1.1.1", "1.0.0.1", "2606:4700:4700::1111", "2606:4700:4700::1001"],
+        "1dot1dot1dot1.cloudflare-dns.com": ["1.1.1.1", "1.0.0.1", "2606:4700:4700::1111", "2606:4700:4700::1001"],
+        "dns.cloudflare.com": ["162.159.61.8", "172.64.41.8", "2a06:98c1:52::8", "2803:f800:53::8"],
+        "cloudflare-dns.com": ["104.16.248.249", "104.16.249.249", "2606:4700::6810:f8f9", "2606:4700::6810:f9f9"],
+        "engage.cloudflareclient.com": ["162.159.192.1", "2606:4700:d0::a29f:c001"],
+        "doh.pub": ["1.12.12.12", "120.53.53.53"],
+        "dot.pub": ["1.12.12.12", "120.53.53.53"],
+        "dns.google": ["8.8.8.8", "8.8.4.4", "2001:4860:4860::8888", "2001:4860:4860::8844"],
+        "dns.quad9.net": ["9.9.9.9", "149.112.112.112", "2620:fe::fe", "2620:fe::9"],
+        "dns.sb": ["45.11.45.11", "185.222.222.222", "2a09::", "2a11::"],
+        "common.dot.dns.yandex.net": ["77.88.8.8", "77.88.8.1", "2a02:6b8::feed:0ff", "2a02:6b8:0:1::feed:0ff"]
+      },
+      servers: ["https://cloudflare-dns.com/dns-query"],
+      tag: "dns-module"
+    };
+  }
+
+  function buildVpnfInbounds() {
+    return [
+      { listen: "127.0.0.1", port: 10808, protocol: "socks",
+        settings: { auth: "noauth", udp: true, userLevel: 8 },
+        sniffing: { destOverride: ["http", "tls", "quic"], enabled: true, routeOnly: false }, tag: "socks" },
+      { listen: "127.0.0.1", port: 10809, protocol: "http",
+        settings: { userLevel: 8 },
+        sniffing: { destOverride: ["http", "tls", "quic"], enabled: true, routeOnly: false }, tag: "http" }
+    ];
+  }
+
+  function buildVpnfFinalmask() {
+    return {
+      tcp: [
+        { type: "fragment", settings: { packets: "tlshello", lengths: ["5", "94", "1"], delays: ["0"], maxSplit: "0" } },
+        { type: "fragment", settings: { packets: "1-1", lengths: ["109", "1"], delays: ["1"], maxSplit: "355" } }
+      ]
+    };
+  }
+
+  function buildVpnfOutboundProxy(parsed) {
+    const streamSettings = {
+      finalmask: buildVpnfFinalmask(),
+      network: "ws",
+      security: "tls",
+      sockopt: {
+        domainStrategy: "UseIP",
+        happyEyeballs: { interleave: 2, maxConcurrentTry: 4, prioritizeIPv6: false, tryDelayMs: 250 }
+      },
+      tlsSettings: {
+        allowInsecure: false,
+        alpn: ["http/1.1"],
+        cipherSuites: "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+        fingerprint: "unsafe",
+        serverName: parsed.sni
+      },
+      wsSettings: { host: parsed.host, path: parsed.path + "?ed=2560" }
+    };
+
+    if (parsed.protocol === 'vless') {
+      return {
+        mux: { concurrency: -1, enabled: false },
+        protocol: "vless",
+        settings: { address: parsed.server, encryption: parsed.encryption || 'none', flow: parsed.flow || '', id: parsed.uuid, level: 8, port: parsed.port },
+        streamSettings, tag: "proxy"
+      };
+    }
+    if (parsed.protocol === 'trojan') {
+      return {
+        mux: { concurrency: -1, enabled: false },
+        protocol: "trojan",
+        settings: { servers: [{ address: parsed.server, port: parsed.port, password: parsed.password, level: 8 }] },
+        streamSettings, tag: "proxy"
+      };
+    }
+    return null;
+  }
+
+  function buildVpnfRoutingRules(opts) {
+    const rules = [];
+    if (opts.ads) rules.push({ type: "field", domain: ["geosite:category-ads-all", "geosite:category-ads-ir"], outboundTag: "block" });
+    if (opts.iran) {
+      rules.push({ type: "field", domain: ["domain:ir"], outboundTag: "direct" });
+      rules.push({ type: "field", ip: ["geoip:ir"], outboundTag: "direct" });
+    }
+    rules.push({ inboundTag: ["dns-module"], outboundTag: "proxy", type: "field" });
+    return rules;
+  }
+
+  function buildVpnfEntry(parsed, opts) {
+    const proxyOutbound = buildVpnfOutboundProxy(parsed);
+    if (!proxyOutbound) return null;
+    return {
+      remarks: parsed.tag,
+      dns: buildVpnfDns(),
+      inbounds: buildVpnfInbounds(),
+      log: { loglevel: "warning" },
+      outbounds: [
+        proxyOutbound,
+        { protocol: "freedom", streamSettings: { network: "tcp", sockopt: { domainStrategy: "UseIP" } }, tag: "direct" },
+        { protocol: "blackhole", settings: {}, tag: "block" }
+      ],
+      routing: { domainStrategy: "AsIs", rules: buildVpnfRoutingRules(opts) }
+    };
+  }
+
+  const $ = (id) => document.getElementById(id);
+  const configInput = $('configInput');
+  const subUrl = $('subUrl');
+  const fetchSubBtn = $('fetchSubBtn');
+  const fileInput = $('fileInput');
+  const convertBtn = $('convertBtn');
+  const statusEl = $('status');
+  const outputCard = $('outputCard');
+  const output = $('output');
+  const copyBtn = $('copyBtn');
+  const downloadBtn = $('downloadBtn');
+
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.className = kind || '';
+  }
+
+  function looksLikeBase64Sub(text) {
+    const t = text.trim();
+    if (!t || /https?:\/\//i.test(t.slice(0, 40))) return false;
+    return /^[A-Za-z0-9+/=\s]+$/.test(t) && t.length > 40;
+  }
+
+  function decodeSubText(text) {
+    let t = text.trim();
+    if (looksLikeBase64Sub(t)) {
+      try {
+        const normalized = t.replace(/-/g, '+').replace(/_/g, '/').replace(/\s+/g, '');
+        const decoded = atob(normalized);
+        if (decoded.includes('://')) return decoded;
+      } catch (e) { }
+    }
+    return t;
+  }
+
+  function appendLinksToInput(text) {
+    const existing = configInput.value.trim();
+    const decoded = decodeSubText(text);
+    const lines = decoded.split('\n').map(l => l.trim()).filter(Boolean);
+    const merged = existing ? existing + '\n' + lines.join('\n') : lines.join('\n');
+    configInput.value = merged;
+  }
+
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      appendLinksToInput(String(reader.result));
+      setStatus('محتوای فایل به لیست کانفیگ‌ها اضافه شد.', 'ok');
+    };
+    reader.onerror = () => setStatus('خطا در خواندن فایل.', 'err');
+    reader.readAsText(f);
+    fileInput.value = '';
+  });
+
+  // پاک‌سازی کامل URL از هش، اسپیس و فضاهای اضافه
+  function sanitizeSubUrl(rawUrl) {
+    let clean = rawUrl.trim();
+    const hashIdx = clean.indexOf('#');
+    if (hashIdx !== -1) {
+      clean = clean.substring(0, hashIdx);
+    }
+    return clean;
+  }
+
+  // تلاش برای دریافت ساب لینک با استفاده از سربرگ سفارشی و پرتال‌های جانبی
+  async function fetchViaProxy(rawUrl) {
+    const cleanUrl = sanitizeSubUrl(rawUrl);
+    const headers = {
+      'User-Agent': 'v2rayNG/1.8.12 (Android)'
+    };
+
+    // روش ۱: دریافت مستقیم
+    try {
+      const r = await fetch(cleanUrl, { cache: 'no-store', headers });
+      if (r.ok) {
+        const txt = await r.text();
+        if (txt && txt.length > 10) return txt;
+      }
+    } catch (e) { }
+
+    // روش ۲: استفاده از CorsProxy.io
+    try {
+      const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(cleanUrl);
+      const r = await fetch(proxyUrl, { cache: 'no-store' });
+      if (r.ok) {
+        const txt = await r.text();
+        if (txt && txt.length > 10) return txt;
+      }
+    } catch (e) { }
+
+    // روش ۳: استفاده از AllOrigins
+    try {
+      const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(cleanUrl);
+      const r = await fetch(proxyUrl, { cache: 'no-store' });
+      if (r.ok) {
+        const txt = await r.text();
+        if (txt && txt.length > 10) return txt;
+      }
+    } catch (e) { }
+
+    // روش ۴: استفاده از CodeTabs CORS Proxy
+    try {
+      const proxyUrl = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(cleanUrl);
+      const r = await fetch(proxyUrl, { cache: 'no-store' });
+      if (r.ok) {
+        const txt = await r.text();
+        if (txt && txt.length > 10) return txt;
+      }
+    } catch (e) { }
+
+    throw new Error('عدم دریافت پاسخ موفق از ساب لینک');
+  }
+
+  fetchSubBtn.addEventListener('click', async () => {
+    const url = subUrl.value.trim();
+    if (!url) { setStatus('اول یه لینک ساب‌اسکریپشن وارد کن.', 'err'); return; }
+    fetchSubBtn.disabled = true;
+    setStatus('در حال دریافت از ساب لینک…');
+    try {
+      const text = await fetchViaProxy(url);
+      appendLinksToInput(text);
+      setStatus('کانفیگ‌های ساب لینک با موفقیت اضافه شدند.', 'ok');
+    } catch (e) {
+      setStatus('دریافت ساب لینک ناموفق بود. لطفاً محتوای ساب را دستی پیست کنید.', 'err');
+    } finally {
+      fetchSubBtn.disabled = false;
+    }
+  });
+
+  convertBtn.addEventListener('click', () => {
+    const raw = configInput.value.trim();
+    if (!raw) { setStatus('اول یه کانفیگ وارد کن.', 'err'); return; }
+
+    const lines = decodeSubText(raw).split('\n').map(l => l.trim()).filter(Boolean);
+    const opts = { ads: $('optAds').checked, iran: $('optIran').checked };
+
+    const entries = [];
+    let unsupported = 0, failed = 0;
+
+    lines.forEach((line, i) => {
+      const parsed = parseLink(line, i);
+      if (!parsed) { failed++; return; }
+      if (parsed.unsupported) { unsupported++; return; }
+      const entry = buildVpnfEntry(parsed, opts);
+      if (entry) entries.push(entry); else unsupported++;
+    });
+
+    if (entries.length === 0) {
+      setStatus('هیچ کانفیگ vless/trojan معتبری پیدا نشد.', 'err');
+      outputCard.style.display = 'none';
+      return;
+    }
+
+    output.value = JSON.stringify(entries, null, 2);
+    outputCard.style.display = '';
+
+    let msg = entries.length + ' کانفیگ با موفقیت تبدیل شد.';
+    if (unsupported) msg += ' (' + unsupported + ' مورد پروتکل پشتیبانی‌نشده حذف شد)';
+    if (failed) msg += ' (' + failed + ' لینک قابل پارس نبود)';
+    setStatus(msg, 'ok');
+    outputCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(output.value);
+      const original = copyBtn.textContent;
+      copyBtn.textContent = 'کپی شد ✓';
+      setTimeout(() => copyBtn.textContent = original, 1500);
+    } catch (e) {
+      output.select();
+      document.execCommand('copy');
+    }
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    const blob = new Blob([output.value], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ff.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  });
+
+})();
+</script>
+</body>
+</html>
