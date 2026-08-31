@@ -801,6 +801,11 @@
     }
   });
 
+  function toPersianDigits(num) {
+    const digits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    return String(num).split('').map(ch => (ch >= '0' && ch <= '9') ? digits[+ch] : ch).join('');
+  }
+
   convertBtn.addEventListener('click', () => {
     const raw = configInput.value.trim();
     if (!raw) { setStatus('اول یه کانفیگ وارد کن.', 'err'); return; }
@@ -821,6 +826,7 @@
       if (ipChangeEnabled && ipPool.length) {
         parsed.server = ipPool[Math.floor(Math.random() * ipPool.length)];
       }
+      parsed.tag = toPersianDigits(entries.length + 1) + ' - زن زندگی آزادی';
       const entry = buildVpnfEntry(parsed, opts);
       if (entry) entries.push(entry); else unsupported++;
     });
