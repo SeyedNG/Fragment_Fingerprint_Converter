@@ -761,7 +761,7 @@
     // preflight that many simple sub servers don't handle), so it's intentionally not set here.
     const attempts = [
       () => fetchWithTimeout(cleanUrl, { cache: 'no-store' }, TIMEOUT_MS),
-      () => fetchWithTimeout('https://corsproxy.io/?' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
+      () => fetchWithTimeout('https://corsproxy.io/?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
       () => fetchWithTimeout('https://api.allorigins.win/raw?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
       () => fetchWithTimeout('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS)
     ];
