@@ -759,11 +759,13 @@
 
     // نکته: هدر User-Agent سفارشی توسط مرورگرها در fetch نادیده گرفته می‌شه (و گاهی باعث خطای CORS preflight
     // روی سرورهایی می‌شه که OPTIONS رو پشتیبانی نمی‌کنن)، پس اینجا دیگه ست نمی‌شه.
+    // نکته: corsproxy.io از سرویس‌های fallback حذف شد؛ این سرویس الان توی تیر رایگانش فقط به دامنه‌های
+    // توسعه (localhost و مشابه) اجازه می‌ده و برای بقیه‌ی دامنه‌ها بدون کلید API جواب نمی‌ده.
     const attempts = [
       () => fetchWithTimeout(cleanUrl, { cache: 'no-store' }, TIMEOUT_MS),
-      () => fetchWithTimeout('https://corsproxy.io/?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
       () => fetchWithTimeout('https://api.allorigins.win/raw?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
-      () => fetchWithTimeout('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS)
+      () => fetchWithTimeout('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
+      () => fetchWithTimeout('https://corsmirror.onrender.com/v1/cors?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS)
     ];
 
     for (const attempt of attempts) {

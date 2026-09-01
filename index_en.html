@@ -759,11 +759,13 @@
 
     // Note: browsers ignore a custom User-Agent header set via fetch (and it can trigger a CORS
     // preflight that many simple sub servers don't handle), so it's intentionally not set here.
+    // Note: corsproxy.io was removed from the fallback chain — its free tier now only allows
+    // development-style origins (localhost, etc.) and requires an API key for other domains.
     const attempts = [
       () => fetchWithTimeout(cleanUrl, { cache: 'no-store' }, TIMEOUT_MS),
-      () => fetchWithTimeout('https://corsproxy.io/?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
       () => fetchWithTimeout('https://api.allorigins.win/raw?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
-      () => fetchWithTimeout('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS)
+      () => fetchWithTimeout('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
+      () => fetchWithTimeout('https://corsmirror.onrender.com/v1/cors?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS)
     ];
 
     for (const attempt of attempts) {
