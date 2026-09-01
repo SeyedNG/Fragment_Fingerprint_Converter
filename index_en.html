@@ -352,7 +352,6 @@
       </label>
     </div>
     <textarea id="ipList" style="min-height:88px; margin-top:8px;">104.21.33.59
-104.21.70.21
 172.67.141.182
 172.67.217.240</textarea>
   </div>
@@ -751,37 +750,44 @@
     }
   }
 
-  // Multi-fallback fetch logic: direct fetch, then a few alternate CORS proxies
+  // Fetch the subscription from several sources in parallel (not sequentially).
+  // Previously each method waited out its full timeout before moving to the next, so if the
+  // first one was slow/hung, the whole process felt long and unreliable. Now all methods run
+  // at once and whichever responds first with valid content wins.
   async function fetchViaProxy(rawUrl) {
     const cleanUrl = sanitizeSubUrl(rawUrl);
-    const TIMEOUT_MS = 9000;
-    let gotAnyResponse = false;
+    const TIMEOUT_MS = 12000;
 
     // Note: browsers ignore a custom User-Agent header set via fetch (and it can trigger a CORS
     // preflight that many simple sub servers don't handle), so it's intentionally not set here.
     // Note: corsproxy.io was removed from the fallback chain — its free tier now only allows
     // development-style origins (localhost, etc.) and requires an API key for other domains.
-    const attempts = [
+    const sources = [
       () => fetchWithTimeout(cleanUrl, { cache: 'no-store' }, TIMEOUT_MS),
       () => fetchWithTimeout('https://api.allorigins.win/raw?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
       () => fetchWithTimeout('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
-      () => fetchWithTimeout('https://corsmirror.onrender.com/v1/cors?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS)
+      () => fetchWithTimeout('https://corsmirror.onrender.com/v1/cors?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
+      () => fetchWithTimeout('https://api.cors.lol/?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS)
     ];
 
-    for (const attempt of attempts) {
-      try {
-        const r = await attempt();
-        if (r && r.ok) {
-          gotAnyResponse = true;
-          const txt = await r.text();
-          if (txt && txt.length > 10) return txt;
-        }
-      } catch (e) { }
-    }
+    let gotAnyResponse = false;
 
-    const err = new Error('Failed to fetch subscription content');
-    err.gotAnyResponse = gotAnyResponse;
-    throw err;
+    const tasks = sources.map(makeRequest => (async () => {
+      const r = await makeRequest();
+      if (!r || !r.ok) throw new Error('bad status');
+      gotAnyResponse = true;
+      const txt = await r.text();
+      if (!txt || txt.length <= 10) throw new Error('empty content');
+      return txt;
+    })());
+
+    try {
+      return await Promise.any(tasks);
+    } catch (aggregateErr) {
+      const err = new Error('Failed to fetch subscription content');
+      err.gotAnyResponse = gotAnyResponse;
+      throw err;
+    }
   }
 
   fetchSubBtn.addEventListener('click', async () => {

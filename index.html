@@ -352,7 +352,6 @@
       </label>
     </div>
     <textarea id="ipList" style="min-height:88px; margin-top:8px;">104.21.33.59
-104.21.70.21
 172.67.141.182
 172.67.217.240</textarea>
   </div>
@@ -751,37 +750,44 @@
     }
   }
 
-  // تلاش برای دریافت ساب لینک از چند مسیر مختلف (مستقیم + چند پرتال CORS جایگزین)
+  // تلاش برای دریافت ساب لینک از چند مسیر مختلف به‌صورت هم‌زمان (نه پشت‌سرهم)
+  // چون قبلاً هر روش تا آخر زمانش صبر می‌کرد و بعد می‌رفت سراغ بعدی، اگه روش اول کند/هنگ بود
+  // کل فرآیند طولانی و ناموفق به‌نظر می‌رسید. الان همه‌ی روش‌ها با هم اجرا می‌شن و هرکدوم زودتر
+  // و با محتوای معتبر جواب بده همون استفاده می‌شه.
   async function fetchViaProxy(rawUrl) {
     const cleanUrl = sanitizeSubUrl(rawUrl);
-    const TIMEOUT_MS = 9000;
-    let gotAnyResponse = false;
+    const TIMEOUT_MS = 12000;
 
     // نکته: هدر User-Agent سفارشی توسط مرورگرها در fetch نادیده گرفته می‌شه (و گاهی باعث خطای CORS preflight
     // روی سرورهایی می‌شه که OPTIONS رو پشتیبانی نمی‌کنن)، پس اینجا دیگه ست نمی‌شه.
     // نکته: corsproxy.io از سرویس‌های fallback حذف شد؛ این سرویس الان توی تیر رایگانش فقط به دامنه‌های
     // توسعه (localhost و مشابه) اجازه می‌ده و برای بقیه‌ی دامنه‌ها بدون کلید API جواب نمی‌ده.
-    const attempts = [
+    const sources = [
       () => fetchWithTimeout(cleanUrl, { cache: 'no-store' }, TIMEOUT_MS),
       () => fetchWithTimeout('https://api.allorigins.win/raw?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
       () => fetchWithTimeout('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
-      () => fetchWithTimeout('https://corsmirror.onrender.com/v1/cors?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS)
+      () => fetchWithTimeout('https://corsmirror.onrender.com/v1/cors?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS),
+      () => fetchWithTimeout('https://api.cors.lol/?url=' + encodeURIComponent(cleanUrl), { cache: 'no-store' }, TIMEOUT_MS)
     ];
 
-    for (const attempt of attempts) {
-      try {
-        const r = await attempt();
-        if (r && r.ok) {
-          gotAnyResponse = true;
-          const txt = await r.text();
-          if (txt && txt.length > 10) return txt;
-        }
-      } catch (e) { }
-    }
+    let gotAnyResponse = false;
 
-    const err = new Error('عدم دریافت پاسخ موفق از ساب لینک');
-    err.gotAnyResponse = gotAnyResponse;
-    throw err;
+    const tasks = sources.map(makeRequest => (async () => {
+      const r = await makeRequest();
+      if (!r || !r.ok) throw new Error('bad status');
+      gotAnyResponse = true;
+      const txt = await r.text();
+      if (!txt || txt.length <= 10) throw new Error('empty content');
+      return txt;
+    })());
+
+    try {
+      return await Promise.any(tasks);
+    } catch (aggregateErr) {
+      const err = new Error('عدم دریافت پاسخ موفق از ساب لینک');
+      err.gotAnyResponse = gotAnyResponse;
+      throw err;
+    }
   }
 
   fetchSubBtn.addEventListener('click', async () => {
