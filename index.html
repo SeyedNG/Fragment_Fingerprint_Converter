@@ -351,9 +351,7 @@
         </span>
       </label>
     </div>
-    <textarea id="ipList" style="min-height:88px; margin-top:8px;">104.21.33.59
-172.67.141.182
-172.67.217.240</textarea>
+    <textarea id="ipList" style="min-height:88px; margin-top:8px;">104.21.33.59</textarea>
   </div>
 
   <!-- Step 3: convert -->
@@ -493,8 +491,8 @@
   function buildVpnfFinalmask() {
     return {
       tcp: [
-        { type: "fragment", settings: { packets: "tlshello", lengths: ["5", "94", "1"], delays: ["0"], maxSplit: "0" } },
-        { type: "fragment", settings: { packets: "1-1", lengths: ["109", "1"], delays: ["1"], maxSplit: "355" } }
+        { type: "fragment", settings: { packets: "tlshello", lengths: ["0", "104", "1"], delays: ["0"], maxSplit: "0" } },
+        { type: "fragment", settings: { packets: "1-1", lengths: ["114", "1"], delays: ["1"], maxSplit: "11" } }
       ]
     };
   }
