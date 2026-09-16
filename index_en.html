@@ -223,6 +223,9 @@
   }
   .opt .opt-title{font-weight:600; font-size:13px; margin-bottom:1px;}
   .opt .opt-desc{font-size:11.5px; color:var(--text-faint);}
+  .opt.is-disabled{opacity:.45; cursor:not-allowed; background:transparent;}
+  .opt.is-disabled:hover{border-color:var(--border);}
+  .opt.is-disabled input{cursor:not-allowed;}
 
   .cta-row{display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap;}
   #status{font-size:12.5px; color:var(--text-muted); font-family:var(--mono);}
@@ -290,23 +293,11 @@
 
   <div class="hero">
     <h1>Config Converter for Bypassing <em>Cloudflare Worker</em> / CDN Blocks<br>and Upload Speed Throttling</h1>
-    <p class="lede">
-      Paste your <code>vless</code> and <code>trojan</code> links here to get a custom Xray config with TLS fragment settings. Designed to bypass worker domain restrictions and fix upload speed limits — everything runs locally in your browser.
-    </p>
-    <div class="devnote">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <span>Prerequisites:<br>Latest Xray-core version<br>Xray-core >= 26.6.27<br>(v2rayNG >= 2.2.6)</span>
-    </div>
-    <div class="devnote">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      <span>For more details on how this format operates, check out the developer's Telegram channel:<a href="https://t.me/patt_channel_x/91?single" target="_blank" rel="noopener">t.me/patt_channel_x/91</a></span>
-    </div>
   </div>
 
   <!-- Step 1: input -->
   <div class="card">
     <h2><span class="step-num">1</span> Config Inputs</h2>
-    <p class="hint">Enter each <code>vless://</code> or <code>trojan://</code> link on a new line, or use one of the options below. If a sub link or file contains custom Xray JSON configs, vless/trojan configs will be extracted from them automatically.</p>
     <textarea id="configInput" placeholder="vless://uuid@server:443?...&#10;trojan://password@server:443?..."></textarea>
 
     <div class="divider-or">OR</div>
@@ -321,23 +312,41 @@
     </div>
   </div>
 
-  <!-- Step 2: options -->
+  <!-- Step 2: output format -->
   <div class="card">
-    <h2><span class="step-num">2</span> Output Routing Settings</h2>
-    <p class="hint">These options are enabled by default. Unchecking either option will remove its rule from the generated routing configuration.</p>
+    <h2><span class="step-num">2</span> Output Format</h2>
     <div class="opts">
       <label class="opt">
-        <input type="checkbox" id="optAds" checked>
+        <input type="radio" name="outputFormat" id="fmtNormal" value="normal" checked>
         <span>
-          <div class="opt-title">Ad Blocking</div>
-          <div class="opt-desc">Block advertising domains and trackers (geosite:category-ads-all/ir)</div>
+          <div class="opt-title">Normal Config</div>
+          <div class="opt-desc">Works with the <a href="https://github.com/patterniha/PattN/releases/latest" target="_blank" rel="noopener">PattN 💻</a> and <a href="https://github.com/patterniha/PattNG/releases/latest" target="_blank" rel="noopener">PattNG 📱</a> clients</div>
         </span>
       </label>
       <label class="opt">
-        <input type="checkbox" id="optIran" checked>
+        <input type="radio" name="outputFormat" id="fmtCustom" value="custom">
+        <span>
+          <div class="opt-title">Custom (JSON)</div>
+          <div class="opt-desc">Full Xray config for custom import</div>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Step 3: options -->
+  <div class="card">
+    <h2><span class="step-num">3</span> Output Routing Settings</h2>
+    <div class="opts">
+      <label class="opt">
+        <input type="checkbox" id="optAds">
+        <span>
+          <div class="opt-title">Ad Blocking</div>
+        </span>
+      </label>
+      <label class="opt">
+        <input type="checkbox" id="optIran">
         <span>
           <div class="opt-title">Bypass Iranian Sites</div>
-          <div class="opt-desc">Directly route .ir domains and Iranian IPs without proxying</div>
         </span>
       </label>
     </div>
@@ -347,16 +356,15 @@
         <input type="checkbox" id="optIpChange" checked>
         <span>
           <div class="opt-title">Randomize Config IP</div>
-          <div class="opt-desc">Replaces each config's connection address with a random IP from the list below (Host/SNI stay untouched). One IP per line — editable.</div>
         </span>
       </label>
     </div>
-    <textarea id="ipList" style="min-height:88px; margin-top:8px;">104.21.33.59</textarea>
+    <textarea id="ipList" style="min-height:88px; margin-top:8px;">188.114.97.6</textarea>
   </div>
 
-  <!-- Step 3: convert -->
+  <!-- Step 4: convert -->
   <div class="card">
-    <h2><span class="step-num">3</span> Convert</h2>
+    <h2><span class="step-num">4</span> Convert</h2>
     <div class="cta-row">
       <button id="convertBtn" class="primary">Convert Configs</button>
       <span id="status"></span>
@@ -365,7 +373,7 @@
 
   <!-- Step 4: output -->
   <div class="card" id="outputCard" style="display:none;">
-    <h2><span class="step-num">4</span> Output</h2>
+    <h2><span class="step-num">5</span> Output</h2>
     <p class="hint">Ready to copy or download — import this directly into your Xray / v2rayNG client. If you use v2rayN (Windows) with multiple configs, use the "Download Separately" button so each config downloads as its own compatible file.</p>
     <div class="out-actions">
       <button id="copyBtn">Copy Output</button>
@@ -387,7 +395,6 @@
         SeyedNG@
       </a>
     </div>
-    <p class="foot-note">All processing is done locally within your browser; no configuration data is sent to external servers (except direct fetches for subscription links).</p>
   </footer>
 
 </div>
@@ -398,6 +405,8 @@
   "use strict";
 
   const randomizeCase = (str) => str.split('').map(c => Math.random() > 0.5 ? c.toUpperCase() : c.toLowerCase()).join('');
+
+  const TLS_CIPHER_SUITES = "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256";
 
   function parseVless(link, index) {
     try {
@@ -497,6 +506,10 @@
     };
   }
 
+  // Same content as buildVpnfFinalmask(), but as a fixed JSON string with a space after
+  // ":" and "," (the exact format the PattN/PattNG clients expect in the link's fm param)
+  const VPNF_FINALMASK_JSON = '{"tcp": [{"type": "fragment", "settings": {"packets": "tlshello", "lengths": ["0", "104", "1"], "delays": ["0"], "maxSplit": "0"}},{"type": "fragment", "settings": {"packets": "1-1", "lengths": ["114", "1"], "delays": ["1"], "maxSplit": "11"}}]}';
+
   function buildVpnfOutboundProxy(parsed) {
     const streamSettings = {
       finalmask: buildVpnfFinalmask(),
@@ -509,7 +522,7 @@
       tlsSettings: {
         allowInsecure: false,
         alpn: ["http/1.1"],
-        cipherSuites: "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384:TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256:TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256:TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+        cipherSuites: TLS_CIPHER_SUITES,
         fingerprint: "unsafe",
         serverName: parsed.sni
       },
@@ -563,6 +576,37 @@
     };
   }
 
+  // Builds the "normal" output: the same vless/trojan link with fragment and fingerprint
+  // settings embedded directly in the link's own query params (compatible with the PattN
+  // and PattNG clients) — unlike the custom output, which builds a full Xray JSON config.
+  function buildNormalLink(parsed) {
+    const fm = VPNF_FINALMASK_JSON;
+    const path = parsed.path || '/';
+    const parts = [
+      ['cs', TLS_CIPHER_SUITES],
+      ['path', path],
+      ['security', 'tls']
+    ];
+    if (parsed.protocol === 'vless') parts.push(['encryption', parsed.encryption || 'none']);
+    parts.push(['fm', fm]);
+    parts.push(['insecure', '0']);
+    parts.push(['host', parsed.host]);
+    parts.push(['fp', 'unsafe']);
+    parts.push(['type', 'ws']);
+    parts.push(['allowInsecure', '0']);
+    parts.push(['sni', parsed.sni]);
+    const qs = parts.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&');
+    const remark = encodeURIComponent(parsed.tag || '');
+
+    if (parsed.protocol === 'vless') {
+      return 'vless://' + parsed.uuid + '@' + parsed.server + ':' + parsed.port + '?' + qs + '#' + remark;
+    }
+    if (parsed.protocol === 'trojan') {
+      return 'trojan://' + encodeURIComponent(parsed.password) + '@' + parsed.server + ':' + parsed.port + '?' + qs + '#' + remark;
+    }
+    return null;
+  }
+
   const $ = (id) => document.getElementById(id);
   const configInput = $('configInput');
   const subUrl = $('subUrl');
@@ -576,6 +620,41 @@
   const downloadBtn = $('downloadBtn');
   const downloadZipBtn = $('downloadZipBtn');
   let lastEntries = [];
+  let lastFormat = 'custom';
+  let inputWasConverted = false;
+
+  function getOutputFormat() {
+    const el = document.querySelector('input[name="outputFormat"]:checked');
+    return el ? el.value : 'normal';
+  }
+
+  function setOptDisabled(id, disabled) {
+    const input = $(id);
+    input.disabled = disabled;
+    const label = input.closest('.opt');
+    if (label) label.classList.toggle('is-disabled', disabled);
+  }
+
+  // In "Normal Config" mode these two options can't be checked at all (fully disabled);
+  // in "Custom" mode they become enabled and get checked automatically.
+  function applyOutputFormatState() {
+    const fmt = getOutputFormat();
+    const isCustom = fmt === 'custom';
+    downloadZipBtn.style.display = isCustom ? '' : 'none';
+    setOptDisabled('optAds', !isCustom);
+    setOptDisabled('optIran', !isCustom);
+    $('optAds').checked = isCustom;
+    $('optIran').checked = isCustom;
+  }
+
+  document.querySelectorAll('input[name="outputFormat"]').forEach((el) => {
+    el.addEventListener('change', applyOutputFormatState);
+  });
+  applyOutputFormatState();
+
+  // If the current input was already converted once, it's "consumed" and gets cleared the
+  // next time appendLinksToInput runs; a manual edit resets that flag.
+  configInput.addEventListener('input', () => { inputWasConverted = false; });
 
   function setStatus(msg, kind) {
     statusEl.textContent = msg;
@@ -707,8 +786,14 @@
     return ip.split('.').every(o => Number(o) >= 0 && Number(o) <= 255);
   }
 
+  // If a conversion already ran since the last manual edit, the current input counts as
+  // "consumed" and gets cleared before newly fetched configs (from a sub link or file) are
+  // added, so already-converted configs don't mix in with the new ones. If nothing has been
+  // converted yet, it still appends as before, so multiple sources (file/sub/manual) can be
+  // combined before a single conversion.
   function appendLinksToInput(text) {
-    const existing = configInput.value.trim();
+    const existing = inputWasConverted ? '' : configInput.value.trim();
+    inputWasConverted = false;
     const lines = linksFromRawText(text);
     const merged = existing ? existing + '\n' + lines.join('\n') : lines.join('\n');
     configInput.value = merged;
@@ -812,6 +897,7 @@
     const raw = configInput.value.trim();
     if (!raw) { setStatus('Please enter at least one config first.', 'err'); return; }
 
+    const outputFormat = getOutputFormat();
     const lines = linksFromRawText(raw);
     const opts = { ads: $('optAds').checked, iran: $('optIran').checked };
 
@@ -819,7 +905,8 @@
     const ipPool = $('ipList').value.split(/[\n,]+/).map(s => s.trim()).filter(Boolean).filter(isValidIp);
 
     const entries = [];
-    let unsupported = 0, failed = 0;
+    const normalLinks = [];
+    let convertedCount = 0, unsupported = 0, failed = 0;
 
     lines.forEach((line, i) => {
       const parsed = parseLink(line, i);
@@ -828,22 +915,39 @@
       if (ipChangeEnabled && ipPool.length) {
         parsed.server = ipPool[Math.floor(Math.random() * ipPool.length)];
       }
-      parsed.tag = (entries.length + 1) + ' - Woman, Life, Freedom';
-      const entry = buildVpnfEntry(parsed, opts);
-      if (entry) entries.push(entry); else unsupported++;
+      parsed.tag = (convertedCount + 1) + ' - Woman, Life, Freedom';
+
+      if (outputFormat === 'normal') {
+        const link = buildNormalLink(parsed);
+        if (link) { normalLinks.push(link); convertedCount++; } else unsupported++;
+      } else {
+        const entry = buildVpnfEntry(parsed, opts);
+        if (entry) { entries.push(entry); convertedCount++; } else unsupported++;
+      }
     });
 
-    if (entries.length === 0) {
+    if (convertedCount === 0) {
       setStatus('No valid VLESS or Trojan configs found.', 'err');
       outputCard.style.display = 'none';
       return;
     }
 
-    output.value = JSON.stringify(entries, null, 2);
-    outputCard.style.display = '';
-    lastEntries = entries;
+    if (outputFormat === 'normal') {
+      output.value = normalLinks.join('\n');
+      lastEntries = normalLinks;
+      lastFormat = 'normal';
+      downloadZipBtn.style.display = 'none';
+    } else {
+      output.value = JSON.stringify(entries, null, 2);
+      lastEntries = entries;
+      lastFormat = 'custom';
+      downloadZipBtn.style.display = '';
+    }
 
-    let msg = entries.length + ' config(s) successfully converted.';
+    outputCard.style.display = '';
+    inputWasConverted = true;
+
+    let msg = convertedCount + ' config(s) successfully converted.';
     if (unsupported) msg += ' (' + unsupported + ' unsupported protocol items removed)';
     if (failed) msg += ' (' + failed + ' unparseable items skipped)';
     setStatus(msg, 'ok');
@@ -882,6 +986,7 @@
   // single JSON file (not wrapped in an array) inside a ZIP, so they can be imported one at a time.
   downloadZipBtn.addEventListener('click', async () => {
     if (!lastEntries.length) { setStatus('Run a conversion first.', 'err'); return; }
+    if (lastFormat !== 'custom') { setStatus('Separate download is only available for the "Custom (JSON)" output.', 'err'); return; }
     if (typeof JSZip === 'undefined') { setStatus('The ZIP library failed to load. Check your internet connection.', 'err'); return; }
     const zip = new JSZip();
     lastEntries.forEach((entry, i) => {
