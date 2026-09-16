@@ -7,10 +7,10 @@
 [![Xray Core](https://img.shields.io/badge/Xray--Core->=26.6.27-orange?style=for-the-badge)](https://github.com/XTLS/Xray-core)
 
 <p align="center">
-  <b>A fully client-side web utility that converts VLESS and Trojan subscription links into custom Xray JSON configurations with TLS Fragment settings, bypassing Cloudflare domain restrictions and resolving upload speed throttling.</b>
+  <b>A fully client-side web tool that converts VLESS and Trojan links into fragmented, Cloudflare-friendly configs — bypassing worker/CDN restrictions and fixing upload speed throttling.</b>
 </p>
 
-[📌 Live Demo](https://seyedng.github.io/Fragment_Fingerprint_Converter/) • [Technical Details on Patterniha Telegram channel](https://t.me/patt_channel_x/91?single)
+[📌 Live Demo](https://seyedng.github.io/Fragment_Fingerprint_Converter/) • [Technical details on the Patterniha Telegram channel](https://t.me/patt_channel_x/91?single)
 
 </div>
 
@@ -18,20 +18,25 @@
 
 ## ⚡ Key Features
 
-* 🔒 **100% Client-Side Processing:** All parsing, transformation, and generation occur entirely inside your browser. No sensitive configuration data is ever sent to external servers.
-* 🧩 **Advanced TLS Fragment Engine:** Applies customized TLS Hello fragmentation and frame splitting to effectively bypass deep packet inspection (DPI) and SNI blocks.
-* 🚀 **Upload Speed Optimization:** Tunes transport layer parameters according to modern Xray-core strategies to fix upload throttling on worker endpoints.
-* 🔄 **Smart Subscription Fetcher:** Features multi-fallback CORS proxy integration to seamlessly pull and decode base64 subscription endpoints directly from the UI.
-* 🇮🇷 **Custom Traffic Routing:** Toggleable routing rules for bypassing domestic Iranian traffic (`.ir` domains / IPs) and blocking advertising networks.
-* 📥 **Standardized `ff.txt` Export:** Direct download/copy support formatted specifically for modern GUI clients like v2rayNG and NekoBox.
+* 🔒 **100% Client-Side:** All parsing and conversion happen in your browser — nothing is sent to any server.
+* 🧩 **TLS Fragment Engine:** Splits the TLS Hello into fragments to bypass DPI and SNI-based blocking.
+* 🚀 **Upload Speed Fix:** Tunes transport settings to resolve upload throttling on Cloudflare Worker endpoints.
+* 🔄 **Subscription Fetcher:** Pulls and decodes base64 subscription links directly in the browser, with a multi-source fallback for when one proxy is blocked or slow.
+* 📁 **Multiple Input Methods:** Paste links directly, upload a `.txt` file, or fetch a subscription URL — all can be combined before converting.
+* 🇮🇷 **Optional Routing Rules:** Toggle ad-blocking and bypass for Iranian (`.ir`) sites and IPs.
+* 🌐 **IP Randomization:** Optionally replace each config's server address with one from your own IP pool.
+* 📤 **Two Output Formats:**
+  * **Normal** — plain `vless://` / `trojan://` links for the [PattN](https://github.com/patterniha/PattN/releases/latest) / [PattNG](https://github.com/patterniha/PattNG/releases/latest) clients.
+  * **Custom (JSON)** — full Xray configs, downloadable as one `ff.txt` file or as separate JSON files in a ZIP (for clients like v2rayN that require one config per file).
+* 🏷️ **Remarks Preserved:** Each config keeps its original name/remark — nothing is renamed during conversion.
 
 ---
 
 ## 📋 Prerequisites
 
-To ensure proper parsing of the generated JSON output, verify that your client app uses updated core binaries:
+To make sure the generated configs work correctly, keep your client up to date:
 
-| Dependency | Minimum Required Version |
+| Dependency | Minimum Version |
 | :--- | :--- |
 | **Xray-Core** | `>= 26.6.27` |
 | **v2rayNG** | `>= 2.2.6` |
@@ -40,10 +45,10 @@ To ensure proper parsing of the generated JSON output, verify that your client a
 
 ## 🛠️ Usage Guide
 
-1. Open `index_en.html` in any web browser or access the live deployment.
-2. Paste your raw `vless://` or `trojan://` URI links (or fetch via subscription URL / `.txt` file upload).
-3. Customize your output routing rules (Ad-blocking / Iranian site bypass).
-4. Click **Convert Configs**, then copy the result or download the generated **`ff.txt`** file.
+1. Open `index_en.html` in your browser, or use the [live demo](https://seyedng.github.io/Fragment_Fingerprint_Converter/).
+2. Paste your `vless://` / `trojan://` links, fetch them from a subscription URL, or upload a `.txt` file.
+3. Choose an output format (Normal or Custom JSON) and set your routing / IP options.
+4. Click **Convert Configs**, then copy the output or download it (`ff.txt`, or the separate-ZIP option for Custom JSON).
 
 ---
 
